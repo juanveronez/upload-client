@@ -8,4 +8,17 @@
   --shadow-shape-content: 0px 0px 0px 1px rgba(0, 0, 0, 0.25), inset 0px 1px 0px rgba(255, 255, 255, 0.02), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.02);
 
   --opacity-2: 2%;
+
+  --animate-border: border 2s linear infinite;
+
+  @keyframes border {
+    100% { --border-angle: 360deg };
+  }
 }
+
+@property --border-angle {
+  inherits: false;
+  initial-value: 0deg;
+  syntax: '<angle>';
+}
+
