@@ -1,0 +1,37 @@
+import { create } from "zustand";
+
+export type Upload = {
+  name: string
+  file: File
+}
+
+type UploadsState = {
+  uploads: Map<string, Upload>
+  addUploads: (files: File[]) => void
+}
+
+export const useUploads = create<UploadsState>((set, get) => {
+  function addUploads(files: File[]) {
+    for (const file of files) {
+      const uploadId = crypto.randomUUID()
+      const upload: Upload = {
+        name: file.name,
+        file
+      }
+
+      set(({ uploads, ...rest }) => {
+        uploads.set(uploadId, upload)
+
+        return {
+          ...rest,
+          uploads,
+        }
+      })
+    }
+  }
+
+  return {
+    uploads: new Map(),
+    addUploads,
+  }
+})
