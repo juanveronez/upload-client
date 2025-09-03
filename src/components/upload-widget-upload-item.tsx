@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { motion } from 'motion/react';
 import { useUploads, type Upload } from '../store/uploads';
 import { formatBytes } from '../utils/format-bytes';
+import { calcProgress } from '../utils/calc-progress';
 
 export interface UploadWidgetUploadItemProps {
   upload: Upload
@@ -16,10 +17,7 @@ export function UploadWidgetUploadItem({
 }: UploadWidgetUploadItemProps) {
   const cancelUpload = useUploads(state => state.cancelUpload)
 
-  const progress = Math.min(
-    Math.round(upload.uploadSizeInBytes / upload.originalSizeInBytes * 100),
-    100,
-  )
+  const progress = calcProgress(upload)
 
   return (
     <motion.div
