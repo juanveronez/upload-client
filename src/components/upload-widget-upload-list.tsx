@@ -19,7 +19,7 @@ export function UploadWidgetUploadList() {
       ) : (
         <div className="space-y-2 overflow-auto">
           {Array.from(uploads.entries()).map(([uploadId, upload]) => (
-            <UploadWidgetUploadItem key={uploadId} upload={upload} />
+            <UploadWidgetUploadItem key={uploadId} upload={upload} uploadId={uploadId} />
           ))}
         </div>
       )}
