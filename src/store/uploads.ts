@@ -2,6 +2,7 @@ import { enableMapSet } from "immer";
 import { create } from "zustand";
 import { immer } from 'zustand/middleware/immer'
 import { uploadFileToStorage } from "../http/upload-file-to-storage";
+import { CanceledError } from "axios";
 
 export type Upload = {
   name: string
@@ -48,11 +49,13 @@ export const useUploads = create<UploadState, [["zustand/immer", never]]>(
             status: 'success',
           });
         });
-      } catch {
+      } catch (err) {
+        const isCanceled = err instanceof CanceledError
+
         set((state) => {
           state.uploads.set(uploadId, {
             ...upload,
-            status: 'error',
+            status: isCanceled ? 'canceled' : 'error',
           });
         });
       }
@@ -63,13 +66,6 @@ export const useUploads = create<UploadState, [["zustand/immer", never]]>(
       if (!upload) return
 
       upload.abortController.abort('canceled')
-
-      set((state) => {
-          state.uploads.set(uploadId, {
-            ...upload,
-            status: 'canceled',
-          });
-        });
     }
 
     function addUploads(files: File[]) {
