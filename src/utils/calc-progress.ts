@@ -1,13 +1,15 @@
 interface ProgressParams {
   uploadSizeInBytes: number
-  originalSizeInBytes: number
+  compressedSizeInBytes?: number
 }
 
 export function calcProgress(
-  { uploadSizeInBytes, originalSizeInBytes }: ProgressParams
+  { uploadSizeInBytes, compressedSizeInBytes }: ProgressParams
 ) {
+  if (!compressedSizeInBytes) return 0
+
   return Math.min(
-    Math.round(uploadSizeInBytes / originalSizeInBytes * 100),
+    Math.round(uploadSizeInBytes / compressedSizeInBytes * 100),
     100,
   )
 }

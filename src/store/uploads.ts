@@ -13,7 +13,9 @@ export type Upload = {
   abortController: AbortController
   status: 'progress' | 'success' | 'error' | 'canceled',
   originalSizeInBytes: number
+  compressedSizeInBytes?: number
   uploadSizeInBytes: number
+  remoteUrl?: string
 }
 
 type UploadState = {
@@ -43,11 +45,13 @@ export const useUploads = create<UploadState, [["zustand/immer", never]]>(
         const compressedFile = await compressImage({
           file: upload.file,
           quality: 0.9,
-          maxHeight: 400,
-          maxWidth: 400,
+          maxHeight: 1000,
+          maxWidth: 1000,
         })
 
-        await uploadFileToStorage(
+        updateUpload(uploadId, { compressedSizeInBytes: compressedFile.size })
+
+        const { url } = await uploadFileToStorage(
           {
             file: compressedFile,
             onProgress(sizeInBytes) {
@@ -57,7 +61,7 @@ export const useUploads = create<UploadState, [["zustand/immer", never]]>(
           { signal: upload.abortController.signal },
         )
 
-        updateUpload(uploadId, { status: 'success' })
+        updateUpload(uploadId, { status: 'success', remoteUrl: url })
       } catch (err) {
         const isCanceled = err instanceof CanceledError
         updateUpload(uploadId, { status: isCanceled ? 'canceled' : 'error' })
@@ -113,15 +117,15 @@ export const usePendingUploads = () => {
     }
 
     const globalPercentage = calcProgress(Array.from(store.uploads.values()).reduce<{
-      originalSizeInBytes: number
+      compressedSizeInBytes: number
       uploadSizeInBytes: number
     }>(
-      (acc, { originalSizeInBytes, uploadSizeInBytes }) => {
-        acc.originalSizeInBytes += originalSizeInBytes
+      (acc, { compressedSizeInBytes, uploadSizeInBytes }) => {
+        acc.compressedSizeInBytes += (compressedSizeInBytes ?? 0)
         acc.uploadSizeInBytes += uploadSizeInBytes
 
         return acc
-      }, { originalSizeInBytes: 0, uploadSizeInBytes: 0 }
+      }, { compressedSizeInBytes: 0, uploadSizeInBytes: 0 }
     ))
 
     return { isThereAnyPendingUploads, globalPercentage }
