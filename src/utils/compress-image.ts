@@ -5,7 +5,7 @@ interface CompressImageParams {
   quality?: number
 }
 
-function convertToWebp(filename: string): string {
+function convertFilenameToWebp(filename: string): string {
   const lastDotIndex = filename.lastIndexOf('.')
 
   if (lastDotIndex === -1) {
@@ -14,6 +14,54 @@ function convertToWebp(filename: string): string {
 
   const extensionlessName = filename.substring(0, lastDotIndex)
   return `${extensionlessName}.webp`
+}
+
+function calculateMeasures(
+  image: HTMLImageElement,
+  { maxHeight, maxWidth }: { maxHeight: number, maxWidth: number }) {
+  let width = image.width
+  let height = image.height
+
+  if (width > height) {
+    if (width > maxWidth) {
+      const proportionalHeight = height * maxWidth / width
+      width = maxWidth
+      height = proportionalHeight
+    }
+  } else {
+    if (height > maxHeight) {
+      const proportionalWidth = width * maxHeight / height
+      height = maxHeight
+      width = proportionalWidth
+    }
+  }
+
+  return {
+    width,
+    height,
+  }
+}
+
+function resizeImageUsingCanvas(
+  image: HTMLImageElement,
+  { maxHeight, maxWidth }: { maxHeight: number, maxWidth: number }
+) {
+  const canvas = document.createElement('canvas')
+
+  const { width, height } = calculateMeasures(image, { maxHeight, maxWidth })
+
+  canvas.width = width
+  canvas.height = height
+
+  const context = canvas.getContext('2d')
+
+  if (!context) {
+    return { canvas: null, error: new Error('Failed to get canvas context') }
+  }
+
+  context?.drawImage(image, 0, 0, width, height)
+
+  return { canvas, error: null }
 }
 
 export function compressImage({
@@ -40,35 +88,11 @@ export function compressImage({
       const compressed = new Image()
 
       compressed.onload = () => {
-        const canvas = document.createElement('canvas')
+        const { canvas, error } = resizeImageUsingCanvas(compressed, { maxHeight, maxWidth })
 
-        let width = compressed.width
-        let height = compressed.height
-
-        if (width > height) {
-          if (width > maxWidth) {
-            const proportionalHeight = height * maxWidth / width
-            width = maxWidth
-            height = proportionalHeight
-          }
-        } else {
-          if (height > maxHeight) {
-            const proportionalWidth = width * maxHeight / height
-            height = maxHeight
-            width = proportionalWidth
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-
-        const context = canvas.getContext('2d')
-
-        if (!context) {
+        if (error) {
           return reject(new Error('Failed to get canvas context'))
         }
-
-        context.drawImage(compressed, 0, 0, width, height)
 
         canvas.toBlob(
           blob => {
@@ -76,7 +100,7 @@ export function compressImage({
               return reject(new Error('Failed to compress image.'))
             }
 
-            const convertedFile = convertToWebp(file.name)
+            const convertedFile = convertFilenameToWebp(file.name)
             const compressedFile = new File(
               [blob],
               convertedFile,
